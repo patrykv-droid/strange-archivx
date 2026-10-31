@@ -48,3 +48,7 @@ Testy obliczeń obejmują 1000-cyfrowe kwoty, precyzję sumowania i przewalutowa
 Playwright używa systemowego Chromium (`/usr/bin/chromium`); inną lokalizację podaj jako `CHROMIUM_PATH`. W razie braku systemowego Chromium zainstaluj przeglądarkę i ustaw tę zmienną. W restrykcyjnym sandboxie testy i Vite wymagają możliwości otwierania lokalnych gniazd/portów.
 
 Oryginalny zasób `agnesstrange2025.png` pozostawiono bez zmian.
+
+### Wersja bez hostingu
+
+Pobierz `Aureo-bez-instalacji.zip`, rozpakuj i otwórz `Aureo.html` w przeglądarce. Kod, style i fonty są w jednym pliku. Kursy NBP wymagają internetu. Dane pozostają w lokalnym zapisie przeglądarki; eksportuj regularnie kopię i używaj pliku z tego samego miejsca na dysku. Budowanie tej wersji: `npm run build:standalone` (wynik `dist-standalone/index.html`). Weryfikacja uruchomienia przez `file://` w zarządzanym Chromium środowiska była zablokowana przez politykę administratora; sprawdzono renderowanie, zapis i ponowne odczytanie pojedynczego HTML przez lokalny adres HTTP.
