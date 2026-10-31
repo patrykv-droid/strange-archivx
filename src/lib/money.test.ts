@@ -33,8 +33,8 @@ test('missing rates invalidate aggregate, same-currency amounts remain usable', 
 });
 test('rounds half up only at display and uses Polish trillion scale', () => {
   assert.equal(fixed(decimal('999.995')), '1000.00');
-  assert.equal(formatMoney(decimal('1000000000000'), 'PLN', true), '1,00 bln PLN');
-  assert.match(formatMoney(decimal('1' + '0'.repeat(200)), 'PLN', true), /^1,00 × 10\^200 PLN$/);
+  assert.equal(formatMoney(decimal('1000000000000'), 'PLN', true), '1,00 bilion PLN');
+  assert.match(formatMoney(decimal('1' + '0'.repeat(200)), 'PLN', true), /decylionów PLN$/);
 });
 test('sorts and charts amounts outside the Number range', () => {
   const enormous = decimal('1' + '0'.repeat(600));
@@ -47,3 +47,13 @@ test('sorts and charts amounts outside the Number range', () => {
  test('shows the entire requested amount without magnitude abbreviations', () => {
   assert.equal(formatMoney(decimal('3418503043.40'), 'PLN').replace(/\u00a0/g, ' '), '3 418 503 043,40 PLN');
  });
+
+
+test('uses the reference long scale through centylion and carries rounding', () => {
+  const examples = [[3, 'tysiąc'], [6, 'milion'], [9, 'miliard'], [12, 'bilion'], [15, 'biliard'], [18, 'trylion'], [21, 'tryliard'], [24, 'kwadrylion'], [30, 'kwintylion'], [36, 'sekstylion'], [42, 'septylion'], [48, 'oktylion'], [54, 'nonylion'], [60, 'decylion'], [600, 'centylion']] as const;
+  for (const [power, name] of examples) assert.equal(formatMoney(decimal('1' + '0'.repeat(power)), 'USD', true), `1,00 ${name} USD`);
+  assert.equal(formatMoney(decimal('3418503043.4'), 'PLN', true), '3,42 miliarda PLN');
+  assert.equal(formatMoney(decimal('999999999.99'), 'USD', true), '1,00 miliard USD');
+  assert.equal(formatMoney(decimal('2500000'), 'USD', true), '2,50 miliona USD');
+  assert.equal(formatMoney({ n: -3500000n, d: 1n }, 'USD', true), '-3,50 miliona USD');
+});

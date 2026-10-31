@@ -1,3 +1,4 @@
+import { LONG_SCALE } from './scales';
 // Money never passes through Number: decimal text -> rational BigInts -> display.
 export type Rational = { n: bigint; d: bigint };
 export const ZERO: Rational = { n: 0n, d: 1n };
@@ -58,16 +59,20 @@ export function fixed(value: Rational, places = 2): string {
 export function formatMoney(value: Rational | null, currency?: string, compact = false): string {
   if (!value) return '—';
   let formatted: string;
-  if (compact && value.n / value.d >= 1_000_000n) {
-    const units: [bigint, string][] = [
-      [10n ** 18n, 'trl'], [10n ** 15n, 'bld'], [10n ** 12n, 'bln'], [10n ** 9n, 'mld'], [10n ** 6n, 'mln'],
-    ];
-    const [factor, unit] = units.find(([factor]) => value.n / value.d >= factor)!;
-    // Above a trylion, scientific notation stays readable even for 1000-digit sums.
-    if (value.n / value.d >= 10n ** 21n) {
-      const digits = (value.n / value.d).toString();
-      formatted = `${digits[0]},${digits.slice(1, 3)} × 10^${digits.length - 1}`;
-    } else formatted = `${fixed({ n: value.n, d: value.d * factor }).replace('.', ',')} ${unit}`;
+  const absolute = value.n < 0n ? -value.n : value.n;
+  if (compact && absolute / value.d >= 1000n) {
+    let index = LONG_SCALE.findIndex(([power]) => absolute >= value.d * 10n ** BigInt(power));
+    let [power, unit] = LONG_SCALE[index];
+    let scaled = fixed({ n: value.n, d: value.d * 10n ** BigInt(power) });
+    // Carry display rounding into the next named unit at boundaries.
+    if (index > 0 && BigInt(scaled.replace('-', '').replace('.', '')) >= 100n * 10n ** BigInt(LONG_SCALE[index - 1][0] - power)) {
+      [power, unit] = LONG_SCALE[--index];
+      scaled = fixed({ n: value.n, d: value.d * 10n ** BigInt(power) });
+    }
+    const [whole, fraction] = scaled.split('.');
+    const count = BigInt(whole.replace('-', ''));
+    const name = fraction !== '00' ? (unit === 'tysiąc' ? 'tysiąca' : unit + 'a') : count === 1n ? unit : count % 10n >= 2n && count % 10n <= 4n && (count % 100n < 12n || count % 100n > 14n) ? (unit === 'tysiąc' ? 'tysiące' : unit + 'y') : (unit === 'tysiąc' ? 'tysięcy' : unit + 'ów');
+    formatted = `${whole.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0')},${fraction} ${name}`;
   } else {
     const [whole, fraction] = fixed(value).split('.');
     formatted = `${whole.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0')},${fraction}`;
@@ -79,3 +84,5 @@ export function share(value: Rational, total: Rational): number {
   // Only the bounded percentage is converted to Number for rendering charts.
   return Number(value.n * total.d * 10000n / (value.d * total.n)) / 100;
 }
+
+export function subtract(a: Rational, b: Rational): Rational { return add(a, { n: -b.n, d: b.d }); }

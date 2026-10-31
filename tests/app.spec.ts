@@ -25,7 +25,7 @@ test('creates a person and enormous assets, converts, edits, persists and delete
   await page.getByRole('dialog', { name: 'Jan Testowy' }).getByRole('button', { name: 'Zamknij', exact: true }).click();
   await page.getByRole('combobox', { name: 'Waluta widoku' }).selectOption('USD');
   await page.getByRole('button', { name: 'Otwórz Jan Testowy' }).click();
-  await expect(page.locator('.detail-summary strong')).toHaveText('131 172 838 325 617 283 832 561 728 383,26 USD', { useInnerText: true });
+  await expect(page.locator('.detail-summary strong')).toHaveText('131 172,84 kwadryliona USD', { useInnerText: true });
   await page.getByRole('button', { name: 'Edytuj', exact: true }).click();
   await page.getByLabel('Wartość', { exact: true }).fill('200');
   await page.getByRole('dialog', { name: 'Edytuj aktywo' }).getByRole('button', { name: 'Zapisz zmiany' }).click();
@@ -133,7 +133,7 @@ test('creates a company, updates entity details and validates an asset amount', 
   await expect(page.getByRole('alert')).toContainText('Wpisz');
   await page.getByLabel('Wartość', { exact: true }).fill('1 000 000,50');
   await page.getByRole('dialog', { name: 'Dodaj aktywo', exact: true }).getByRole('button', { name: 'Dodaj aktywo', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Nowa organizacja' })).toContainText('1 000 000,50 USD');
+  await expect(page.getByRole('dialog', { name: 'Nowa organizacja' })).toContainText('1,00 milion USD');
 });
 
 
@@ -147,6 +147,8 @@ test('USD default, full amounts and photo upload survive edit, reload and export
   await page.getByLabel('Wybierz zdjęcie miniatury').setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: png });
   await expect(page.getByAltText('Podgląd miniatury')).toBeVisible();
   await expect(page.getByAltText('Podgląd miniatury')).toHaveJSProperty('naturalWidth', 320);
+  await expect(page.getByAltText('Podgląd miniatury')).toHaveJSProperty('naturalHeight', 240);
+  await expect(page.getByAltText('Podgląd miniatury')).toHaveCSS('object-fit', 'contain');
   await page.getByLabel('Wybierz zdjęcie miniatury').setInputFiles({ name: 'bad.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
   await expect(page.getByRole('alert')).toContainText('JPG, PNG lub WebP');
   await expect(page.getByAltText('Podgląd miniatury')).toBeVisible();
@@ -160,7 +162,7 @@ test('USD default, full amounts and photo upload survive edit, reload and export
   await expect(page.getByAltText('Podgląd miniatury')).toBeVisible();
   await page.getByRole('dialog', { name: 'Dodaj aktywo', exact: true }).getByRole('button', { name: 'Dodaj aktywo', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Zamknij', exact: true }).click();
-  await expect(page.locator('tbody tr').filter({ hasText: 'Zdjęcie testowe' })).toContainText('3 418 503 043,40 USD');
+  await expect(page.locator('tbody tr').filter({ hasText: 'Zdjęcie testowe' })).toContainText('3,42 miliarda USD');
   await page.reload();
   await expect(page.getByAltText('Zdjęcie: Zdjęcie testowe')).toBeVisible();
   await page.getByRole('button', { name: 'Otwórz Zdjęcie testowe' }).click();
@@ -180,4 +182,46 @@ test('USD default, full amounts and photo upload survive edit, reload and export
   await page.getByRole('button', { name: 'Przywróć kopię', exact: true }).click();
   await page.getByRole('button', { name: 'Otwórz Zdjęcie testowe' }).click();
   await expect(page.getByAltText('Zdjęcie: Pełna kwota')).toBeVisible();
+});
+
+test('opens a persistent financial profile in a new tab and updates its finances', async ({ page }) => {
+  await mockRates(page); await page.goto('/');
+  await expect(page.getByText('Połączono z NBP')).toBeVisible();
+  const pending = page.waitForEvent('popup');
+  await page.getByRole('link', { name: 'Profil Aleksander Nowak w nowej karcie', exact: true }).click();
+  const profile = await pending;
+  await profile.route('https://api.nbp.pl/**', r => r.abort());
+  await expect(profile.getByRole('heading', { name: 'Aleksander Nowak', exact: true })).toBeVisible();
+  await expect(profile).toHaveURL(/#profil\//);
+  const metric = (name: string) => profile.locator('.profile-metric').filter({ has: profile.locator('span', { hasText: new RegExp(`^${name}$`) }) });
+  await expect(metric('Aktywa brutto')).toContainText('2,40 miliarda USD');
+  await expect(metric('Majątek netto')).toContainText('—');
+  await profile.getByRole('button', { name: 'Edytuj finanse', exact: true }).click();
+  await profile.getByLabel('Zobowiązania łącznie').fill('500000000');
+  await profile.getByLabel('Roczne przychody / dochody').fill('100000000');
+  await profile.getByLabel('Roczne koszty / wydatki').fill('125000000');
+  await profile.getByLabel('Notatki finansowe').fill('Finanse podmiotu — test zapisu.');
+  await profile.getByRole('button', { name: 'Zapisz finanse', exact: true }).click();
+  await expect(metric('Majątek netto')).toContainText('1,90 miliarda USD');
+  await expect(metric('Roczna nadwyżka / deficyt')).toContainText('-25,00 milionów USD');
+  await profile.reload();
+  await expect(profile.getByText('Finanse podmiotu — test zapisu.')).toBeVisible();
+  await expect(metric('Majątek netto')).toContainText('1,90 miliarda USD');
+  await profile.getByRole('button', { name: 'Edytuj podmiot', exact: true }).click();
+  await profile.getByLabel('Nazwa / imię i nazwisko').fill('Aleksander Nowak — profil');
+  await profile.getByRole('button', { name: 'Zapisz zmiany', exact: true }).click();
+  await expect(metric('Majątek netto')).toContainText('1,90 miliarda USD');
+  await profile.getByLabel('Waluta profilu').selectOption('EUR');
+  await expect(metric('Majątek netto')).toContainText('1,79 miliarda EUR');
+  const exported = profile.waitForEvent('download');
+  await profile.getByRole('button', { name: 'Eksportuj profil JSON', exact: true }).click();
+  const data = JSON.parse(await readFile((await (await exported).path())!, 'utf8'));
+  expect(data.entities).toHaveLength(1);
+  expect(data.entities[0].financials.liabilities).toBe('500000000');
+  await page.bringToFront();
+  await expect(page.locator('tbody')).toContainText('Aleksander Nowak — profil');
+  await profile.setViewportSize({ width: 390, height: 844 });
+  expect(await profile.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await profile.screenshot({ path: '/tmp/aureo-profile-mobile.png', fullPage: true });
+  await profile.close();
 });

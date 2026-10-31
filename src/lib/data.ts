@@ -14,7 +14,8 @@ export const CATEGORIES = {
 } as const;
 export type Category = keyof typeof CATEGORIES;
 export type Asset = { photo?: string; id: string; name: string; category: Category; amount: string; currency: Currency };
-export type Entity = { photo?: string; id: string; name: string; type: EntityType; description: string; assets: Asset[]; createdAt: string; updatedAt: string };
+export type Financials = { currency: Currency; liabilities: string; annualIncome: string; annualExpenses: string; notes: string };
+export type Entity = { financials?: Financials; photo?: string; id: string; name: string; type: EntityType; description: string; assets: Asset[]; createdAt: string; updatedAt: string };
 export type Registry = { version: 1; entities: Entity[]; isDemo: boolean };
 export const STORAGE_KEY = 'aureo.registry.v1';
 export const RATE_KEY = 'aureo.nbp.v1';
@@ -48,6 +49,13 @@ export function validateRegistry(value: unknown): Registry {
     if (!e || typeof e.name !== 'string' || !e.name.trim() || e.name.length > 150 || !Object.hasOwn(TYPES, e.type) || typeof e.description !== 'string' || e.description.length > 1000 || !Array.isArray(e.assets) || e.assets.length > 10000) return fail();
     if (typeof e.createdAt !== 'string' || typeof e.updatedAt !== 'string' || !Number.isFinite(Date.parse(e.createdAt)) || !Number.isFinite(Date.parse(e.updatedAt))) return fail();
     if (e.photo !== undefined && !isThumbnail(e.photo)) return fail();
+    if (e.financials !== undefined) {
+      const f = e.financials;
+      if (!f || !CURRENCIES.includes(f.currency) || typeof f.notes !== 'string' || f.notes.length > 5000) return fail();
+      for (const value of [f.liabilities, f.annualIncome, f.annualExpenses]) {
+        try { if (typeof value !== 'string' || normalizeAmount(value) !== value) return fail(); } catch { return fail(); }
+      }
+    }
     unique(e.id);
     for (const a of e.assets) {
       if (!a || typeof a.name !== 'string' || !a.name.trim() || a.name.length > 150 || !Object.hasOwn(CATEGORIES, a.category) || !CURRENCIES.includes(a.currency) || typeof a.amount !== 'string') return fail();

@@ -34,3 +34,13 @@ test('accepts old backups and validates optional embedded photos', () => {
   registry.entities[0].photo = 'https://example.com/image.png';
   assert.throws(() => validateRegistry(registry));
 });
+
+
+test('financial profile data are exact strings and remain backwards compatible', () => {
+  const registry = demoRegistry();
+  assert.equal(validateRegistry(registry), registry);
+  registry.entities[0].financials = { currency: 'USD', liabilities: '1000000000000000000000000', annualIncome: '100', annualExpenses: '200', notes: 'Test' };
+  assert.deepEqual(validateRegistry(JSON.parse(JSON.stringify(registry))), registry);
+  registry.entities[0].financials.liabilities = '-1';
+  assert.throws(() => validateRegistry(registry));
+});

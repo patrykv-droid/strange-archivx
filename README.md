@@ -22,7 +22,7 @@ Serwer deweloperski korzysta domyślnie z portu 5173. Produkcyjny build: `npm ru
 - Dodawanie, edycja i usuwanie podmiotów oraz ich aktywów; wyszukiwanie, filtrowanie i sortowanie rejestru.
 - Kategorie: inwestycje, nieruchomości, udziały w firmach, gotówka i depozyty oraz pozostałe aktywa.
 - Kwoty do 1000 cyfr przed przecinkiem i 100 po przecinku. Należy wpisywać pełne liczby, z kropką lub przecinkiem dziesiętnym; spacje grupujące cyfry są dozwolone. Zapis wykładniczy nie jest przyjmowany.
-- Kwoty źródłowe są tekstem; obliczenia wykorzystują ułamki oparte na `BigInt`. Zaokrąglanie połówek w górę do dwóch miejsc następuje dopiero przy wyświetlaniu, po sumowaniu. Interfejs wyświetla pełne kwoty bez skrótów mln/mld. Domyślną walutą widoku i nowych aktywów jest USD; istniejące aktywa zachowują swoje waluty źródłowe.
+- Kwoty źródłowe są tekstem; obliczenia wykorzystują ułamki oparte na `BigInt`. Zaokrąglanie połówek w górę do dwóch miejsc następuje dopiero przy wyświetlaniu, po sumowaniu. Interfejs skraca kwoty nazwami ze skali długiej (np. 3,42 miliarda USD, 1,00 bilion USD), aż do centyliona (10^600). Pełne wartości pozostają w edycji, podpowiedziach i eksporcie. Domyślną walutą widoku i nowych aktywów jest USD; istniejące aktywa zachowują swoje waluty źródłowe.
 - 13 walut; kursy średnie tabeli A NBP pobierane przy starcie, na żądanie i co godzinę. Przeliczenie: kwota × kurs waluty źródłowej w PLN ÷ kurs waluty docelowej w PLN. Zmiana waluty widoku nie zmienia danych źródłowych.
 - Ostatnia poprawna tabela jest buforowana. Przy awarii połączenia aplikacja oznacza ją jako zapisaną i pokazuje datę. Bez kursów niepełne sumy są oznaczane jako „—”; kwoty w tej samej walucie pozostają dostępne. Nie ma zastępczych, przykładowych kursów.
 - Eksport i import kopii JSON z walidacją i potwierdzeniem zastąpienia rejestru; raport CSV do arkuszy. CSV zawiera oryginalne kwoty jako tekst, ale arkusze mogą automatycznie tracić precyzję — do kopii i przenoszenia danych używaj JSON.
@@ -60,3 +60,13 @@ Formularze podmiotów i aktywów pozwalają dodać, zmienić lub usunąć zdjęc
 Przed zmianą pliku HTML wyeksportuj kopię danych. Zastąp plik w tym samym miejscu na dysku, zachowując nazwę `Aureo.html` i przeglądarkę. Jeśli przeglądarka nie udostępni starego zapisu, przywróć kopię JSON przez Importuj.
 
 Powtarzalne przygotowanie obu paczek: `npm run package:download` (wymaga Python 3). Interfejs ma neutralną, czarno-białą paletę; zdjęcia zachowują oryginalne kolory. Pierwsze uruchomienie tej wersji ustawia USD, pomijając starą preferencję waluty v1; dalsze wybory są zapamiętywane pod kluczem `aureo.currency.v2`.
+
+### Profile finansowe w nowej karcie
+
+Kliknij „Profil” przy rekordzie lub w jego karcie szczegółów. Profil otwiera się w nowej karcie pod adresem z fragmentem `#profil/ID` (również dla pojedynczego pliku HTML). Przed otwarciem zapisujemy rejestr, aby identyfikatory przykładów i nowe dane były dostępne w drugiej karcie. Zmiany rejestru są odświeżane między kartami przez zdarzenia storage i po powrocie do karty.
+
+Profil pokazuje aktywa brutto, zobowiązania, majątek netto, roczne przychody/dochody, koszty/wydatki oraz nadwyżkę lub deficyt. „Edytuj finanse” pozwala zapisać te kwoty w wybranej walucie i dodać notatki. Bez zadeklarowanych danych finansowych pokazujemy „—”, a nie pozorne zera. Profil obejmuje również strukturę majątku, ekspozycję walutową i aktywa od największego. Można wyeksportować sam profil jako zgodną kopię JSON.
+
+Zdjęcia mogą mieć dowolne proporcje. Są skalowane proporcjonalnie, a we wszystkich miniaturach i na profilu wyświetlamy cały obraz przez object-fit: contain, bez przycinania do kwadratu. Format pliku nadal musi być JPG, PNG lub WebP.
+
+Skala nazw odpowiada dostarczonej tabeli: tysiąc (10^3), milion (10^6), miliard (10^9), bilion (10^12), biliard (10^15), trylion (10^18), tryliard (10^21), kwadrylion (10^24), kwintylion (10^30), sekstylion (10^36), septylion (10^42), oktylion (10^48), nonylion (10^54), decylion (10^60), centylion (10^600). Pomiędzy wymienionymi progami stosujemy wielokrotność największej dostępnej nazwy. Kwoty wyświetlane są zaokrąglane do dwóch miejsc, a zapis źródłowy pozostaje dokładny.
