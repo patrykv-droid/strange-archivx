@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { test, expect, type Page } from '@playwright/test';
 
 const currencies = ['EUR', 'USD', 'GBP', 'CHF', 'JPY', 'CNY', 'CAD', 'AUD', 'NOK', 'SEK', 'DKK', 'CZK'];
@@ -132,5 +133,51 @@ test('creates a company, updates entity details and validates an asset amount', 
   await expect(page.getByRole('alert')).toContainText('Wpisz');
   await page.getByLabel('Wartość', { exact: true }).fill('1 000 000,50');
   await page.getByRole('dialog', { name: 'Dodaj aktywo', exact: true }).getByRole('button', { name: 'Dodaj aktywo', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Nowa organizacja' })).toContainText('1 000 000,50 PLN');
+  await expect(page.getByRole('dialog', { name: 'Nowa organizacja' })).toContainText('1 000 000,50 USD');
+});
+
+
+test('USD default, full amounts and photo upload survive edit, reload and export', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('aureo.currency.v1', 'PLN'));
+  await mockRates(page); await page.goto('/');
+  await expect(page.getByLabel('Waluta widoku')).toHaveValue('USD');
+  await page.getByRole('button', { name: 'Dodaj podmiot', exact: true }).click();
+  await page.getByLabel('Nazwa / imię i nazwisko').fill('Zdjęcie testowe');
+  const png = Buffer.from(await page.evaluate(() => { const canvas = document.createElement('canvas'); canvas.width = 640; canvas.height = 480; const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#222'; ctx.fillRect(0, 0, 640, 480); return canvas.toDataURL('image/png').split(',')[1]; }), 'base64');
+  await page.getByLabel('Wybierz zdjęcie miniatury').setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: png });
+  await expect(page.getByAltText('Podgląd miniatury')).toBeVisible();
+  await expect(page.getByAltText('Podgląd miniatury')).toHaveJSProperty('naturalWidth', 320);
+  await page.getByLabel('Wybierz zdjęcie miniatury').setInputFiles({ name: 'bad.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
+  await expect(page.getByRole('alert')).toContainText('JPG, PNG lub WebP');
+  await expect(page.getByAltText('Podgląd miniatury')).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Dodaj podmiot', exact: true }).click();
+  await expect(page.getByRole('dialog').getByAltText('Zdjęcie: Zdjęcie testowe')).toBeVisible();
+  await page.getByRole('button', { name: 'Dodaj aktywo', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: 'Waluta', exact: true })).toHaveValue('USD');
+  await page.getByLabel('Nazwa aktywa').fill('Pełna kwota');
+  await page.getByLabel('Wartość', { exact: true }).fill('3418503043,40');
+  await page.getByLabel('Wybierz zdjęcie miniatury').setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: png });
+  await expect(page.getByAltText('Podgląd miniatury')).toBeVisible();
+  await page.getByRole('dialog', { name: 'Dodaj aktywo', exact: true }).getByRole('button', { name: 'Dodaj aktywo', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Zamknij', exact: true }).click();
+  await expect(page.locator('tbody tr').filter({ hasText: 'Zdjęcie testowe' })).toContainText('3 418 503 043,40 USD');
+  await page.reload();
+  await expect(page.getByAltText('Zdjęcie: Zdjęcie testowe')).toBeVisible();
+  await page.getByRole('button', { name: 'Otwórz Zdjęcie testowe' }).click();
+  await expect(page.getByRole('dialog').getByAltText('Zdjęcie: Pełna kwota')).toBeVisible();
+  await page.getByRole('button', { name: 'Edytuj podmiot', exact: true }).click();
+  await page.getByRole('button', { name: 'Usuń zdjęcie', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Edytuj podmiot' }).getByRole('button', { name: 'Zapisz zmiany' }).click();
+  await expect(page.getByRole('dialog').getByAltText('Zdjęcie: Zdjęcie testowe')).toHaveCount(0);
+  const data = await page.evaluate(() => JSON.parse(localStorage.getItem('aureo.registry.v1')!));
+  expect(data.entities.at(-1).assets[0].photo).toMatch(/^data:image/);
+  await page.getByRole('dialog').getByRole('button', { name: 'Zamknij', exact: true }).click();
+  const pending = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Eksportuj', exact: true }).click();
+  const saved = await readFile((await (await pending).path())!);
+  expect(JSON.parse(saved.toString()).entities.at(-1).assets[0].photo).toBe(data.entities.at(-1).assets[0].photo);
+  await page.getByLabel('Importuj kopię JSON').setInputFiles({ name: 'photos.json', mimeType: 'application/json', buffer: saved });
+  await page.getByRole('button', { name: 'Przywróć kopię', exact: true }).click();
+  await page.getByRole('button', { name: 'Otwórz Zdjęcie testowe' }).click();
+  await expect(page.getByAltText('Zdjęcie: Pełna kwota')).toBeVisible();
 });

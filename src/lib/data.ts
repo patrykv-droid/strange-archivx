@@ -1,19 +1,20 @@
+import { isThumbnail } from './images';
 import { normalizeAmount } from './money';
 
-export const CURRENCIES = ['PLN', 'EUR', 'USD', 'GBP', 'CHF', 'JPY', 'CNY', 'CAD', 'AUD', 'NOK', 'SEK', 'DKK', 'CZK'] as const;
+export const CURRENCIES = ['USD', 'PLN', 'EUR', 'GBP', 'CHF', 'JPY', 'CNY', 'CAD', 'AUD', 'NOK', 'SEK', 'DKK', 'CZK'] as const;
 export type Currency = typeof CURRENCIES[number];
 export const TYPES = { person: 'Osoba', company: 'Firma', organization: 'Organizacja' } as const;
 export type EntityType = keyof typeof TYPES;
 export const CATEGORIES = {
-  investments: { label: 'Inwestycje', color: '#284f42' },
-  property: { label: 'Nieruchomości', color: '#9bba89' },
-  business: { label: 'Udziały w firmach', color: '#c8d5b0' },
-  cash: { label: 'Gotówka i depozyty', color: '#d8c4a3' },
-  other: { label: 'Pozostałe aktywa', color: '#a4b5b2' },
+  investments: { label: 'Inwestycje', color: '#222222' },
+  property: { label: 'Nieruchomości', color: '#777777' },
+  business: { label: 'Udziały w firmach', color: '#aaaaaa' },
+  cash: { label: 'Gotówka i depozyty', color: '#cccccc' },
+  other: { label: 'Pozostałe aktywa', color: '#555555' },
 } as const;
 export type Category = keyof typeof CATEGORIES;
-export type Asset = { id: string; name: string; category: Category; amount: string; currency: Currency };
-export type Entity = { id: string; name: string; type: EntityType; description: string; assets: Asset[]; createdAt: string; updatedAt: string };
+export type Asset = { photo?: string; id: string; name: string; category: Category; amount: string; currency: Currency };
+export type Entity = { photo?: string; id: string; name: string; type: EntityType; description: string; assets: Asset[]; createdAt: string; updatedAt: string };
 export type Registry = { version: 1; entities: Entity[]; isDemo: boolean };
 export const STORAGE_KEY = 'aureo.registry.v1';
 export const RATE_KEY = 'aureo.nbp.v1';
@@ -27,7 +28,7 @@ export function id(): string {
 }
 export function demoRegistry(): Registry {
   const date = new Date().toISOString();
-  const asset = (name: string, category: Category, amount: string): Asset => ({ id: id(), name, category, amount, currency: 'PLN' });
+  const asset = (name: string, category: Category, amount: string): Asset => ({ id: id(), name, category, amount, currency: 'USD' });
   return { version: 1, isDemo: true, entities: [
     { id: id(), name: 'Aleksander Nowak', type: 'person', description: 'Portfel prywatny · Polska', createdAt: date, updatedAt: date, assets: [asset('Portfel inwestycyjny', 'investments', '1800000000'), asset('Nieruchomości komercyjne', 'property', '450000000'), asset('Depozyty bankowe', 'cash', '150000000')] },
     { id: id(), name: 'Meridian Capital', type: 'company', description: 'Holding inwestycyjny', createdAt: date, updatedAt: date, assets: [asset('Udziały w spółkach', 'business', '1250000000'), asset('Obligacje i fundusze', 'investments', '580000000'), asset('Rezerwy gotówkowe', 'cash', '90000000')] },
@@ -46,9 +47,11 @@ export function validateRegistry(value: unknown): Registry {
   for (const e of data.entities) {
     if (!e || typeof e.name !== 'string' || !e.name.trim() || e.name.length > 150 || !Object.hasOwn(TYPES, e.type) || typeof e.description !== 'string' || e.description.length > 1000 || !Array.isArray(e.assets) || e.assets.length > 10000) return fail();
     if (typeof e.createdAt !== 'string' || typeof e.updatedAt !== 'string' || !Number.isFinite(Date.parse(e.createdAt)) || !Number.isFinite(Date.parse(e.updatedAt))) return fail();
+    if (e.photo !== undefined && !isThumbnail(e.photo)) return fail();
     unique(e.id);
     for (const a of e.assets) {
       if (!a || typeof a.name !== 'string' || !a.name.trim() || a.name.length > 150 || !Object.hasOwn(CATEGORIES, a.category) || !CURRENCIES.includes(a.currency) || typeof a.amount !== 'string') return fail();
+      if (a.photo !== undefined && !isThumbnail(a.photo)) return fail();
       unique(a.id);
       try { if (normalizeAmount(a.amount) !== a.amount) return fail(); } catch { return fail(); }
     }

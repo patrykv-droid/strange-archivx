@@ -9,7 +9,8 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "tsx --test src/lib/*.test.ts",
     "test:e2e": "playwright test",
-    "build:standalone": "tsc -b && vite build --config vite.standalone.config.ts"
+    "build:standalone": "tsc -b && vite build --config vite.standalone.config.ts",
+    "package:download": "npm run build && npm run build:standalone && python3 scripts/package-app.py"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.3.0",

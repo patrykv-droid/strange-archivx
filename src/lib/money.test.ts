@@ -43,3 +43,7 @@ test('sorts and charts amounts outside the Number range', () => {
   assert.equal(compare(enormous, decimal('1' + '0'.repeat(599))), 1);
   assert.equal(share(ZERO, ZERO), 0);
 });
+
+ test('shows the entire requested amount without magnitude abbreviations', () => {
+  assert.equal(formatMoney(decimal('3418503043.40'), 'PLN').replace(/\u00a0/g, ' '), '3 418 503 043,40 PLN');
+ });

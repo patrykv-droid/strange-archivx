@@ -22,7 +22,7 @@ Serwer deweloperski korzysta domyślnie z portu 5173. Produkcyjny build: `npm ru
 - Dodawanie, edycja i usuwanie podmiotów oraz ich aktywów; wyszukiwanie, filtrowanie i sortowanie rejestru.
 - Kategorie: inwestycje, nieruchomości, udziały w firmach, gotówka i depozyty oraz pozostałe aktywa.
 - Kwoty do 1000 cyfr przed przecinkiem i 100 po przecinku. Należy wpisywać pełne liczby, z kropką lub przecinkiem dziesiętnym; spacje grupujące cyfry są dozwolone. Zapis wykładniczy nie jest przyjmowany.
-- Kwoty źródłowe są tekstem; obliczenia wykorzystują ułamki oparte na `BigInt`. Zaokrąglanie połówek w górę do dwóch miejsc następuje dopiero przy wyświetlaniu, po sumowaniu. Podsumowania mają skróty polskiej skali (mln, mld, bln, bld, trl); karta podmiotu pokazuje całą kwotę.
+- Kwoty źródłowe są tekstem; obliczenia wykorzystują ułamki oparte na `BigInt`. Zaokrąglanie połówek w górę do dwóch miejsc następuje dopiero przy wyświetlaniu, po sumowaniu. Interfejs wyświetla pełne kwoty bez skrótów mln/mld. Domyślną walutą widoku i nowych aktywów jest USD; istniejące aktywa zachowują swoje waluty źródłowe.
 - 13 walut; kursy średnie tabeli A NBP pobierane przy starcie, na żądanie i co godzinę. Przeliczenie: kwota × kurs waluty źródłowej w PLN ÷ kurs waluty docelowej w PLN. Zmiana waluty widoku nie zmienia danych źródłowych.
 - Ostatnia poprawna tabela jest buforowana. Przy awarii połączenia aplikacja oznacza ją jako zapisaną i pokazuje datę. Bez kursów niepełne sumy są oznaczane jako „—”; kwoty w tej samej walucie pozostają dostępne. Nie ma zastępczych, przykładowych kursów.
 - Eksport i import kopii JSON z walidacją i potwierdzeniem zastąpienia rejestru; raport CSV do arkuszy. CSV zawiera oryginalne kwoty jako tekst, ale arkusze mogą automatycznie tracić precyzję — do kopii i przenoszenia danych używaj JSON.
@@ -52,3 +52,11 @@ Oryginalny zasób `agnesstrange2025.png` pozostawiono bez zmian.
 ### Wersja bez hostingu
 
 Pobierz `Aureo-bez-instalacji.zip`, rozpakuj i otwórz `Aureo.html` w przeglądarce. Kod, style i fonty są w jednym pliku. Kursy NBP wymagają internetu. Dane pozostają w lokalnym zapisie przeglądarki; eksportuj regularnie kopię i używaj pliku z tego samego miejsca na dysku. Budowanie tej wersji: `npm run build:standalone` (wynik `dist-standalone/index.html`). Weryfikacja uruchomienia przez `file://` w zarządzanym Chromium środowiska była zablokowana przez politykę administratora; sprawdzono renderowanie, zapis i ponowne odczytanie pojedynczego HTML przez lokalny adres HTTP.
+
+### Miniatury i aktualizacje
+
+Formularze podmiotów i aktywów pozwalają dodać, zmienić lub usunąć zdjęcie JPG, PNG lub WebP (plik do 10 MB). Obraz jest zmniejszany lokalnie do maks. 320 px i zapisywany wraz z rekordem; nie jest wysyłany na serwer. Kopie JSON obejmują zdjęcia. Starsze kopie bez zdjęć są nadal obsługiwane. Liczba miniatur zależy od limitu pamięci przeglądarki — nieudany zapis jest zgłaszany i nie zastępuje poprzednich danych.
+
+Przed zmianą pliku HTML wyeksportuj kopię danych. Zastąp plik w tym samym miejscu na dysku, zachowując nazwę `Aureo.html` i przeglądarkę. Jeśli przeglądarka nie udostępni starego zapisu, przywróć kopię JSON przez Importuj.
+
+Powtarzalne przygotowanie obu paczek: `npm run package:download` (wymaga Python 3). Interfejs ma neutralną, czarno-białą paletę; zdjęcia zachowują oryginalne kolory. Pierwsze uruchomienie tej wersji ustawia USD, pomijając starą preferencję waluty v1; dalsze wybory są zapamiętywane pod kluczem `aureo.currency.v2`.

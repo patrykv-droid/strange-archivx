@@ -23,3 +23,14 @@ test('validates the complete NBP table and rejects incomplete rates', () => {
   assert.equal(parseNbp(table).rates.PLN, '1');
   table[0].rates.pop(); assert.throws(() => parseNbp(table));
 });
+
+
+test('accepts old backups and validates optional embedded photos', () => {
+  const registry = demoRegistry();
+  assert.equal(validateRegistry(registry), registry);
+  registry.entities[0].photo = 'data:image/png;base64,aGVsbG8=';
+  registry.entities[0].assets[0].photo = 'data:image/webp;base64,aGVsbG8=';
+  assert.equal(validateRegistry(registry), registry);
+  registry.entities[0].photo = 'https://example.com/image.png';
+  assert.throws(() => validateRegistry(registry));
+});
