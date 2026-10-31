@@ -1,3 +1,4 @@
+import { ProfileStatistics } from './Statistics';
 import { useState, type FormEvent } from 'react';
 import { ArrowDownToLine, ArrowLeft, Plus, Settings2 } from 'lucide-react';
 import { CATEGORIES, CURRENCIES, TYPES, type Currency, type Entity, type Financials } from './lib/data';
@@ -21,8 +22,8 @@ export function FinancialForm({ entity, save, close }: { entity: Entity; save: (
   </form>;
 }
 
-export default function EntityProfile({ entity, currency, rates, rateDate, setCurrency, back, edit, addAsset, editAsset, finances, exportEntity }: {
-  entity: Entity; currency: Currency; rates: Record<string, string>; rateDate?: string;
+export default function EntityProfile({ entities, entity, currency, rates, rateDate, setCurrency, back, edit, addAsset, editAsset, finances, exportEntity }: {
+  entities: Entity[]; entity: Entity; currency: Currency; rates: Record<string, string>; rateDate?: string;
   setCurrency: (c: Currency) => void; back: () => void; edit: () => void; addAsset: () => void; editAsset: (id: string) => void; finances: () => void; exportEntity: () => void;
 }) {
   const valueOf = (asset: Entity['assets'][number]) => convert(asset.amount, asset.currency, currency, rates);
@@ -50,6 +51,7 @@ export default function EntityProfile({ entity, currency, rates, rateDate, setCu
     <p className="profile-finances-note">Wycena w {currency}{rateDate ? ` · tabela NBP z ${rateDate.split('-').reverse().join('.')}` : ' · brak pobranej tabeli NBP'}. Znak „—” oznacza brak danych lub kursu. Są to wyceny i zadeklarowane dane, a nie historia rachunku.</p>
     <div className="profile-sections"><section className="panel profile-panel"><h2>Struktura majątku</h2>{categories.map(c => <div className="report-category" key={c.label}><div><span className="category-label"><i style={{ background: c.color }} />{c.label}</span><strong title={formatMoney(c.value, currency)}>{formatMoney(c.value, currency, true)}</strong></div><div className="bar-track"><span style={{ width: `${gross && c.value ? share(c.value, gross) : 0}%`, background: c.color }} /></div><small>{c.count} aktywów · {gross && c.value ? `${share(c.value, gross).toLocaleString('pl-PL')}%` : '—'}</small></div>)}</section>
     <section className="panel profile-panel"><h2>Ekspozycja walutowa</h2>{originals.length ? originals.map(c => <div className="profile-line" key={c.currency}><span>{c.currency} · {c.count} aktywów</span><strong title={formatMoney(c.amount, c.currency)}>{formatMoney(c.amount, c.currency, true)}</strong></div>) : <p className="profile-unset">Brak aktywów. Dodaj pierwszy składnik majątku.</p>}<h2 style={{ marginTop: 25 }}>Notatki finansowe</h2><p className="profile-notes">{financial?.notes || 'Nie dodano notatek. Uzupełnisz je przez „Edytuj finanse”.'}</p></section></div>
+    <ProfileStatistics entity={entity} entities={entities} currency={currency} rates={rates} />
     <section className="panel profile-assets"><div className="registry-top"><div><h2>Aktywa — od największego</h2><p>Pełną wartość zobaczysz po najechaniu na kwotę lub w edycji aktywa.</p></div></div><div className="table-scroll"><table><thead><tr><th>Aktywo</th><th>Kategoria</th><th className="value-column">Wartość oryginalna</th><th className="value-column">Wartość w {currency}</th><th /></tr></thead><tbody>{sorted.map(a => <tr key={a.id}><td><div className="entity-name">{a.photo && <img className="asset-photo" src={a.photo} alt={`Zdjęcie: ${a.name}`} />}<strong>{a.name}</strong></div></td><td>{CATEGORIES[a.category].label}</td><td className="value-column"><span title={formatMoney(decimal(a.amount), a.currency)}>{formatMoney(decimal(a.amount), a.currency, true)}</span></td><td className="value-column"><strong title={formatMoney(valueOf(a), currency)}>{formatMoney(valueOf(a), currency, true)}</strong></td><td><button className="text-button" onClick={() => editAsset(a.id)}>Edytuj</button></td></tr>)}</tbody></table></div>{!sorted.length && <div className="empty-state"><p>Nie dodano jeszcze aktywów.</p><button className="button secondary" onClick={addAsset}>Dodaj pierwsze aktywo</button></div>}</section>
   </div>;
 }

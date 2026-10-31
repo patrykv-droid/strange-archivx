@@ -12,7 +12,8 @@ with zipfile.ZipFile(root / 'Aureo-bez-instalacji.zip', 'w', zipfile.ZIP_DEFLATE
 1. Rozpakuj ZIP i otwórz Aureo.html w Chrome, Edge lub Firefox.
 2. Dodaj podmiot, a w jego karcie dodaj aktywa.
 3. W formularzu podmiotu lub aktywa wybierz Dodaj zdjęcie. Dowolne proporcje obrazu, bez przycinania.
-4. Kliknij Profil przy rekordzie: otworzy się w nowej karcie. Edytuj finanse pozwala dodać zobowiązania, roczne przychody, wydatki i notatki.
+4. Zakładka Statystyki zawiera rankingi, mediany, Pareto 80/20, krzywą Lorenza, porównywarkę i symulator.
+5. Kliknij Profil przy rekordzie: otworzy się w nowej karcie. Edytuj finanse pozwala dodać zobowiązania, roczne przychody, wydatki i notatki.
 
 Domyślna waluta to USD. Kwoty są skracane nazwami skali długiej: milion, miliard, bilion i kolejne, aż do centyliona. Kolory interfejsu: czerń, biel i szarości.
 Zdjęcia JPG, PNG i WebP do 10 MB są zmniejszane do miniatury maks. 320 px i przechowywane lokalnie wraz z rekordem.

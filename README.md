@@ -70,3 +70,15 @@ Profil pokazuje aktywa brutto, zobowiązania, majątek netto, roczne przychody/d
 Zdjęcia mogą mieć dowolne proporcje. Są skalowane proporcjonalnie, a we wszystkich miniaturach i na profilu wyświetlamy cały obraz przez object-fit: contain, bez przycinania do kwadratu. Format pliku nadal musi być JPG, PNG lub WebP.
 
 Skala nazw odpowiada dostarczonej tabeli: tysiąc (10^3), milion (10^6), miliard (10^9), bilion (10^12), biliard (10^15), trylion (10^18), tryliard (10^21), kwadrylion (10^24), kwintylion (10^30), sekstylion (10^36), septylion (10^42), oktylion (10^48), nonylion (10^54), decylion (10^60), centylion (10^600). Pomiędzy wymienionymi progami stosujemy wielokrotność największej dostępnej nazwy. Kwoty wyświetlane są zaokrąglane do dwóch miejsc, a zapis źródłowy pozostaje dokładny.
+
+### Centrum statystyk
+
+Zakładka **Statystyki** obejmuje sumę wycen, średnią i medianę majątku, średnią i medianę aktywa, kwartyle, rozstęp międzykwartylowy, iloraz lidera do minimum, indeks Giniego, HHI i efektywną liczbę podmiotów. Można analizować cały rejestr albo wybrany typ podmiotów.
+
+Ciekawostki są deterministycznie wyliczane z danych: udział lidera, test Pareto (najbogatsze ceil(20% × n) rekordów), liczba rekordów potrzebnych do osiągnięcia 80% wycen, iloraz średniej do mediany, największe aktywo oraz podział kapitału na 30 × 365 dni. Wykres Lorenza, TOP 1/3/5, ranking z remisami, struktura kategorii i walut oraz porównywarka dwóch rekordów uzupełniają podsumowanie. Ranking obejmuje aktywa brutto, a nie majątek netto.
+
+Podmiot z brakującym kursem dla choć jednego aktywa jest wykluczany z całej analizy, co jest jawnie opisane nad statystykami. Rekord bez aktywów jest wyceniany na zero. Kwartyle używają interpolacji liniowej typu 7. Gini i koncentracja nie są określone przy zerowej sumie; dzielenie przez zero daje „—”. Dokładne obliczenia korzystają z BigInt, w tym dla 1000-cyfrowych kwot. Nie tworzymy fikcyjnych zmian historycznych ani porównań do światowych majątków.
+
+Laboratorium pozwala podać własną cenę jednostki porównawczej i hipotetyczną stopę roczną 0–100%. Wylicza równowartość jednostek, teoretyczny wynik roczny/miesięczny i kapitał po 10 latach kapitalizacji. To matematyczna symulacja całego kapitału przy stałej stopie, bez podatków, inflacji, kosztów, wpłat i zmian kursów, nie prognoza lub aktualna oferta. Wyniki statystyk można wyeksportować osobno do JSON; taki eksport nie jest kopią rejestru do importu.
+
+Na profilu dostępny jest też **Statystyczny rentgen podmiotu**: pozycja i udział w rejestrze, wielokrotność mediany, zobowiązania/aktywa, nadwyżka/przychody, liczba miesięcy wydatków pokrytych gotówką, lata wydatków w aktywach, pokrycie zobowiązań gotówką oraz zadeklarowane przychody i wydatki na dzień. Wyjaśnienia przy wskaźnikach opisują ich założenia; nadwyżka/przychody nie jest stopą zwrotu z inwestycji.

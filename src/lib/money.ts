@@ -86,3 +86,10 @@ export function share(value: Rational, total: Rational): number {
 }
 
 export function subtract(a: Rational, b: Rational): Rational { return add(a, { n: -b.n, d: b.d }); }
+
+export function multiply(a: Rational, b: Rational): Rational { return rational(a.n * b.n, a.d * b.d); }
+export function divide(a: Rational, b: Rational): Rational | null {
+  if (b.n === 0n) return null;
+  const sign = b.n < 0n ? -1n : 1n;
+  return rational(a.n * b.d * sign, a.d * b.n * sign);
+}

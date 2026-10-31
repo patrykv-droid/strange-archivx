@@ -225,3 +225,38 @@ test('opens a persistent financial profile in a new tab and updates its finances
   await profile.screenshot({ path: '/tmp/aureo-profile-mobile.png', fullPage: true });
   await profile.close();
 });
+
+test('statistics show correct aggregates, comparisons, scope and simulations', async ({ page }) => {
+  await mockRates(page); await page.goto('/');
+  await page.getByRole('button', { name: 'Statystyki', exact: true }).click();
+  const tile = (title: string) => page.locator('.analytics-tile').filter({ has: page.locator('span', { hasText: new RegExp(`^${title}$`) }) });
+  await expect(tile('Suma wycen')).toContainText('6,10 miliarda USD');
+  await expect(tile('Średnia na podmiot')).toContainText('1,22 miliarda USD');
+  await expect(tile('Mediana majątku')).toContainText('890,00 milionów USD');
+  await expect(tile('Indeks Giniego')).toContainText('0,369');
+  await expect(page.getByRole('img', { name: /Krzywa Lorenza/ })).toBeVisible();
+  await expect(tile('Różnica: pierwszy minus drugi')).toContainText('480,00 milionów USD');
+  await page.getByLabel('Pierwszy podmiot do porównania').selectOption({ label: 'Natalia Wiśniewska' });
+  await expect(tile('Różnica: pierwszy minus drugi')).toContainText('-1,03 miliarda USD');
+  await page.getByRole('button', { name: 'Zamień porównywane podmioty' }).click();
+  await expect(tile('Różnica: pierwszy minus drugi')).toContainText('1,03 miliarda USD');
+  await page.getByLabel('Cena jednostki porównawczej').fill('1000000000');
+  await expect(tile('Równowartość jednostek')).toContainText('6,10');
+  await page.getByLabel('Hipotetyczna stopa roczna').fill('0');
+  await expect(tile('Hipotetyczny wynik roczny')).toContainText('0,00 USD');
+  await expect(tile('Majątek po 10 latach')).toContainText('6,10 miliarda USD');
+  await page.getByLabel('Cena jednostki porównawczej').fill('0');
+  await expect(page.getByRole('alert')).toContainText('większa od zera');
+  await page.getByLabel('Cena jednostki porównawczej').fill('1000000');
+  await page.getByRole('group', { name: 'Zakres statystyk' }).getByRole('button', { name: 'Firmy', exact: true }).click();
+  await expect(tile('Suma wycen')).toContainText('2,60 miliarda USD');
+  await expect(page.locator('tbody tr')).toHaveCount(2);
+  const pending = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Eksportuj statystyki', exact: true }).click();
+  const exported = JSON.parse(await readFile((await (await pending).path())!, 'utf8'));
+  expect(exported.included).toBe(2);
+  expect(exported.summary.total.n).toBe('2600000000');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await page.screenshot({ path: '/tmp/aureo-statistics-mobile.png', fullPage: true });
+});
